@@ -5,7 +5,7 @@ classes = {
         'class_name': 'power flow'
     },
     'sunday_pilates_burn': {
-        'start_time': '12:00am',
+        'start_time': '9:00am',
         'weekday': 'sunday',
         'class_name': 'pilates burn'
     }
