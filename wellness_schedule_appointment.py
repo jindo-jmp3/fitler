@@ -15,7 +15,7 @@ if __name__ == '__main__':
     parser.add_argument('email', help='Email login.')
     parser.add_argument('password', help='Password login.')
     parser.add_argument('class_key', help='Dictionary key for the class, must be exact.')
-    parser.add_argument('--book_at_noon', type=bool, default=True, help='Only start trying to book at 12pm noon.')
+    parser.add_argument('--book_at_noon', type=bool, default=False, help='Only start trying to book at 12pm noon.')
     # parser.add_argument('--start_time', default=None,
     #                     help='Start time of the class; if not present, choose first class.')
     args = parser.parse_args()
@@ -32,8 +32,10 @@ if __name__ == '__main__':
 
     while book_at_noon:
         edt_tz = pytz.timezone('US/Eastern')
-        if dt.datetime.now(tz=edt_tz).hour != 12:
-            sleep(1.2)
+        if (dt.datetime.now(tz=edt_tz).hour < 11 or dt.datetime.now(tz=edt_tz).minute < 59 or \
+            dt.datetime.now(tz=edt_tz).second < 57) or \
+                (dt.datetime.now(tz=edt_tz).hour > 12 or dt.datetime.now(tz=edt_tz).minute > 3):
+            sleep(0.2)
             continue
         else:
             book_at_noon = False
@@ -44,16 +46,17 @@ if __name__ == '__main__':
     password_input.send_keys(password)
     password_input.send_keys(Keys.ENTER)
 
-    next_button = browser.find_element(By.XPATH, "/html/body/div[1]/main/div[3]/div[1]/div/div[1]/div[3]/div/button[2]")
-    sleep(0.6)
-    next_button.click()
-
     # get class dict to work on
     class_dict = class_dicts.classes[class_key]
 
     successful_reserve = False
     while not successful_reserve:
         sleep(1)
+
+        next_button = browser.find_element(By.XPATH,
+                                           "/html/body/div[1]/main/div[3]/div[1]/div/div[1]/div[3]/div/button[2]")
+        next_button.click()
+
         calendar_table = browser.find_element(By.XPATH,
                                               '/html/body/div[1]/main/div[3]/div[1]/div/div[2]/div/table/tbody/tr/td/div/div/div/div[2]/table')
 
@@ -65,6 +68,7 @@ if __name__ == '__main__':
                 try:
                     time, name, is_open = cell.text.split('\n')
                     start_time = time.split(' - ')[0]
+                    print(start_time, name, is_open)
 
                     if is_open.lower() == 'reservations open' and name.lower() == class_dict.get(
                             'class_name') and start_time.lower() == class_dict.get('start_time'):
@@ -98,7 +102,7 @@ if __name__ == '__main__':
                     pass
 
         if not successful_reserve:
-            sleep(15)
+            sleep(1)
             browser.refresh()
 
     print(f'Successfully reserved class {class_key}')
